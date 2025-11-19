@@ -1,24 +1,35 @@
 import { StatusBar } from "expo-status-bar";
 import { useState, useEffect } from "react";
 import { View, StyleSheet, Dimensions, Text } from "react-native";
+import { Accelerometer } from "expo-sensors";
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 const PLAYER_WIDTH = 50;
 const PLAYER_HEIGHT = 50;
-
-const BULLET_WIDTH = 10;
-const BULLET_HEIGHT = 20;
-
-const BLOCK_WIDTH = 40;
-const BLOCK_HEIGHT = 40;
-
 export default function App() {
   const [playerX, setPlayerX] = useState((screenWidth - PLAYER_WIDTH) / 2);
+  const speed = 8;
+  useEffect(() => {
+    Accelerometer.setUpdateInterval(16); 
+    const subscription = Accelerometer.addListener(({ x }) => {
+      const tilt = -x;   
+      setPlayerX((prevX) => {
+        let newX = prevX + tilt * speed;
+        if (newX < 0) newX = 0;
+        if (newX > screenWidth - PLAYER_WIDTH)
+          newX = screenWidth - PLAYER_WIDTH;
+        return newX;
+      });
+    });
+
+    return () => subscription && subscription.remove();
+  }, []);
 
   return (
     <View style={styles.container}>
       <View style={[styles.player, { left: playerX }]} />
       <Text style={styles.instruction}>Tilt your phone to move</Text>
+      <StatusBar style="light" />
     </View>
   );
 }
@@ -46,29 +57,5 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontFamily: "Courier",
     fontSize: 14,
-  },
-  bullet: {
-    position: "absolute",
-    width: BULLET_WIDTH,
-    height: BULLET_HEIGHT,
-    backgroundColor: "#FFF",
-    borderWidth: 1,
-    borderColor: "#000",
-  },
-  fallingBlock: {
-    position: "absolute",
-    width: BLOCK_WIDTH,
-    height: BLOCK_HEIGHT,
-    backgroundColor: "white",
-    borderWidth: 1,
-    borderColor: "black",
-  },
-  gameOverText: {
-    position: "absolute",
-    top: screenHeight / 2 - 40,
-    color: "#FFF",
-    fontSize: 24,
-    fontWeight: "bold",
-    fontFamily: "Courier",
   },
 });
